@@ -16,6 +16,10 @@ class Statistic extends Model
         'total_co2'
     ];
 
+    protected $attributes = [
+        'total_co2' => 0,
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

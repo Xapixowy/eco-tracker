@@ -7,6 +7,8 @@ use App\Exceptions\UserNotFoundException;
 use App\Exceptions\UserNotLoggedInException;
 use App\Exceptions\UserPasswordIncorrectException;
 use App\Http\Resources\UserResource;
+use App\Models\SourceType;
+use App\Models\Statistic;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -16,10 +18,20 @@ class AuthService
     public function register(array $data): UserResource
     {
         return DB::transaction(function () use ($data) {
-            return UserResource::make(User::create([
+            $newUser = User::create([
                 ...$data,
                 'password' => Hash::make($data['password']),
-            ]));
+            ]);
+            Statistic::create([
+                'user_id' => $newUser->id,
+                'source_type_id' => SourceType::where('name', 'Vehicle')->first()->id,
+            ]);
+            Statistic::create([
+                'user_id' => $newUser->id,
+                'source_type_id' => SourceType::where('name', 'Home')->first()->id,
+            ]);
+
+            return UserResource::make($newUser);
         });
     }
 

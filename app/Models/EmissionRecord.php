@@ -6,16 +6,23 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class EmmisionRecord extends Model
+class EmissionRecord extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'sourcable_type',
         'sourcable_id',
+        'fuel_type_id',
+        'fuel_consumption',
         'start_at',
         'end_at',
         'co2_emmision',
+    ];
+
+    protected $casts = [
+        'start_at' => 'datetime',
+        'end_at' => 'datetime',
     ];
 
     public function sourcable(): MorphTo

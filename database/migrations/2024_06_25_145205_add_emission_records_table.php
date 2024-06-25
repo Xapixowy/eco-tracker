@@ -10,9 +10,11 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('emmision_records', function (Blueprint $table) {
+        Schema::create('emission_records', function (Blueprint $table) {
             $table->id();
             $table->morphs('sourcable');
+            $table->foreignId('fuel_type_id')->constrained();
+            $table->float('fuel_consumption');
             $table->dateTime('start_at');
             $table->dateTime('end_at');
             $table->decimal('co2_emmision', 8, 2);
@@ -25,6 +27,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('emmision_records');
+        Schema::dropIfExists('emission_records');
     }
 };

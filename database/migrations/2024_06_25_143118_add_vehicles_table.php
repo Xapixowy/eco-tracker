@@ -15,7 +15,6 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained();
             $table->string('name');
             $table->foreignId('fuel_type_id')->constrained();
-            $table->decimal('fuel_consumption', 8, 2);
             $table->timestamps();
         });
     }

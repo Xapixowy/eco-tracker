@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->string('street');
             $table->string('building');
-            $table->string('apartment');
+            $table->string('apartment')->nullable();
             $table->string('zip_code');
             $table->string('city');
             $table->string('voivodeship');

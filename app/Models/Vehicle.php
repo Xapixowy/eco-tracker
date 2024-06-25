@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Vehicle extends Model
 {
@@ -15,7 +15,6 @@ class Vehicle extends Model
         'user_id',
         'name',
         'fuel_type_id',
-        'fuel_consumption',
     ];
 
     public function user(): belongsTo
@@ -23,8 +22,13 @@ class Vehicle extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function fuelType(): hasOne
+    public function fuelType(): belongsTo
     {
-        return $this->hasOne(FuelType::class);
+        return $this->belongsTo(FuelType::class);
+    }
+
+    public function emissionRecords(): morphMany
+    {
+        return $this->morphMany(EmissionRecord::class, 'sourcable');
     }
 }
