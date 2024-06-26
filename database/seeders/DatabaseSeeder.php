@@ -16,5 +16,9 @@ class DatabaseSeeder extends Seeder
         $this->call(UserSeeder::class);
         $this->call(FuelTypeSeeder::class);
         $this->call(SourceTypeSeeder::class);
+        $this->call(VehicleSeeder::class);
+        $this->call(AddressSeeder::class);
+        $this->call(HomeSeeder::class);
+        $this->call(EmissionRecordSeeder::class);
     }
 }

@@ -12,98 +12,61 @@ use Illuminate\Support\Collection;
 
 class StatisticService
 {
-    private EmissionRecordService $emissionRecordService;
-
-    public function __construct(EmissionRecordService $emissionRecordService)
-    {
-        $this->emissionRecordService = $emissionRecordService;
-    }
-
     public function index(array $params, User $user): array
-    {
-        return $this->buildVehiclesStatistic($params, $user);
-    }
-
-    private function buildVehiclesStatistic(array $params, User $user): array
     {
         $carbonFrom = isset($params[StatisticRequest::FROM_KEY]) ? Carbon::make($params[StatisticRequest::FROM_KEY]) : null;
         $carbonTo = isset($params[StatisticRequest::TO_KEY]) ? Carbon::make($params[StatisticRequest::TO_KEY]) : null;
 
         $vehicleEmissionRecords = $this->getEmissionRecordsBetweenDates(Carbon::make($carbonFrom), $carbonTo, $user->vehicles);
+        $homeEmissionRecords = $this->getEmissionRecordsBetweenDates(Carbon::make($carbonFrom), $carbonTo, $user->homes);
 
-        dd($vehicleEmissionRecords);
-
-        $vehicleEmissionRecords = $user->vehicles->map(function (Vehicle $vehicle) use ($params) {
-            $query = $vehicle->emissionRecords();
-
-            if (isset($params[StatisticRequest::FROM_KEY])) {
-                $query->where('start_at', '>=', Carbon::make($params[StatisticRequest::FROM_KEY])->toDateTimeString());
-            }
-
-            if (isset($params[StatisticRequest::TO_KEY])) {
-                $query->where('end_at', '<=', Carbon::make($params[StatisticRequest::TO_KEY])->toDateTimeString());
-            }
-
-            return $query->get();
-        })->flatten()->sortBy('start_at');
-
-        if ($vehicleEmissionRecords->isEmpty()) {
-            throw new StatisticsUnableToRetrieveDueToEmissionRecordsNotFoundException();
-        }
-
-        $carbonFrom = isset($params[StatisticRequest::FROM_KEY]) ? Carbon::make($params[StatisticRequest::FROM_KEY]) : Carbon::make($vehicleEmissionRecords->first()->start_at);
-        $carbonTo = isset($params[StatisticRequest::TO_KEY]) ? Carbon::make($params[StatisticRequest::TO_KEY]) : Carbon::now();
-
-        $vehicleEmissionRecordDays = $carbonFrom->diffInDays($carbonTo);
-        $averageNationalCo2PerDay = config('co2.average_national_co2_per_year') / 365;
-        $co2EmissionSum = round($vehicleEmissionRecords->sum('co2_emmision'), 2);
-
-        $isAboveAverage = ($co2EmissionSum / $vehicleEmissionRecordDays) > $averageNationalCo2PerDay;
-
-        return [
-            'co2_emission' => $co2EmissionSum,
-            'is_above_average' => $isAboveAverage,
-        ];
+        return $this->getStatisticBetweenDates($carbonFrom, $carbonTo, $vehicleEmissionRecords->merge($homeEmissionRecords)->sortBy('start_at'));
     }
 
-    private function getEmissionRecordsBetweenDates(?Carbon $date_from, ?Carbon $date_to, Collection $resources): array
+    private function getEmissionRecordsBetweenDates(?Carbon $date_from, ?Carbon $date_to, Collection $resources): Collection
     {
         $emissionRecords = $resources->map(function (Vehicle|Home $resource) use ($date_from, $date_to) {
             $query = $resource->emissionRecords();
 
-            if (isset($params[StatisticRequest::FROM_KEY])) {
+            if ($date_from) {
                 $query->where('start_at', '>=', $date_from->toDateTimeString());
             }
 
-            if (isset($params[StatisticRequest::TO_KEY])) {
-                $query->where('end_at', '<=', Carbon::make($params[StatisticRequest::TO_KEY])->toDateTimeString());
+            if ($date_to) {
+                $query->where('end_at', '<=', $date_to->toDateTimeString());
             }
 
             return $query->get();
         })->flatten()->sortBy('start_at');
 
+
         if ($emissionRecords->isEmpty()) {
-            throw new StatisticsUnableToRetrieveDueToEmissionRecordsNotFoundException();
+            return collect();
         }
 
-        return $emissionRecords->toArray();
+        return $emissionRecords;
     }
 
     private function getStatisticBetweenDates(?Carbon $date_from, ?Carbon $date_to, Collection $resources): array
     {
+        if ($resources->isEmpty()) {
+            throw new StatisticsUnableToRetrieveDueToEmissionRecordsNotFoundException();
+        }
+
         $start_date = $date_from ?? Carbon::make($resources->first()->start_at);
         $end_date = $date_to ?? Carbon::now();
 
-        $emissionRecordDays = $start_date->diffInDays($end_date);
+        $emissionRecordDays = round($start_date->diffInDays($end_date));
+        $emissionRecordDays = $emissionRecordDays > 0 ? $emissionRecordDays : 1;
         $averageNationalCo2PerDay = config('co2.average_national_co2_per_year') / 365;
         $co2EmissionSum = round($resources->sum('co2_emmision'), 2);
 
         $isAboveAverage = ($co2EmissionSum / $emissionRecordDays) > $averageNationalCo2PerDay;
 
         return [
-            'co2_emission_range' => $co2EmissionSum,
+            'co2_emission_days' => $emissionRecordDays,
             'co2_emission' => $co2EmissionSum,
-            'co2_emission_national_average' => $averageNationalCo2PerDay * $emissionRecordDays,
+            'co2_emission_national_average' => round($averageNationalCo2PerDay * $emissionRecordDays, 2),
             'message' => $this->getStatisticMessage($isAboveAverage),
         ];
     }
