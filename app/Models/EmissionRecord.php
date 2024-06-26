@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class EmissionRecord extends Model
@@ -28,5 +29,10 @@ class EmissionRecord extends Model
     public function sourcable(): MorphTo
     {
         return $this->morphTo();
+    }
+    
+    public function fuelType(): BelongsTo
+    {
+        return $this->belongsTo(FuelType::class);
     }
 }

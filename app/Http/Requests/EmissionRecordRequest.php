@@ -4,23 +4,31 @@ namespace App\Http\Requests;
 
 use App\Models\FuelType;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Str;
 
 class EmissionRecordRequest extends FormRequest
 {
-    const STORE_ROUTE = 'emission-records.store';
+    const VEHICLE_STORE_ROUTE = 'vehicles.emission-records.store';
+    const HOMES_STORE_ROUTE = 'homes.emission-records.store';
     const FUEL_TYPE_ID_KEY = 'fuel_type_id';
     const FUEL_CONSUMPTION_KEY = 'fuel_consumption';
     const START_AT_KEY = 'start_at';
     const END_AT_KEY = 'end_at';
 
     private static $rules = [
-        self::STORE_ROUTE => [
-            self::FUEL_TYPE_ID_KEY => 'required|integer|exists:fuel_types,id',
+        self::VEHICLE_STORE_ROUTE => [
             self::FUEL_CONSUMPTION_KEY => 'required|numeric',
             self::START_AT_KEY => 'required|date',
             self::END_AT_KEY => 'required|date',
         ],
+        self::HOMES_STORE_ROUTE => [
+            self::FUEL_TYPE_ID_KEY => [
+                'required',
+                'integer',
+            ],
+            self::FUEL_CONSUMPTION_KEY => 'required|numeric',
+            self::START_AT_KEY => 'required|date',
+            self::END_AT_KEY => 'required|date',
+        ]
     ];
 
     /**
@@ -33,29 +41,9 @@ class EmissionRecordRequest extends FormRequest
 
     public function messages(): array
     {
-        $vehicleAvailableFuelTypesCollection = FuelType::pluck('name', 'id')
-            ->filter(function ($item) {
-                return $item == 'Diesel' || $item == 'Gasoline';
-            });
+        $fuelTypeIdMessage = $this->getFuelTypeIdMessage();
 
-        $homeAvailableFuelTypesCollection = FuelType::pluck('name', 'id')
-            ->filter(function ($item) {
-                return $item == 'Electricity' || $item == 'Natural Gas';
-            });
-
-        if ($this->request->get('sourceType') == 'vehicles') {
-            $availableFuelTypesCollection = $vehicleAvailableFuelTypesCollection;
-        } else {
-            $availableFuelTypesCollection = $homeAvailableFuelTypesCollection;
-        }
-
-        $availableFuelTypes = $availableFuelTypesCollection->map(function ($item, $key) {
-            return $key . ' => ' . $item;
-        })->toArray();
-
-        return [
-            self::FUEL_TYPE_ID_KEY => 'The selected fuel type id is invalid. Available fuel types: ' . implode(', ', $availableFuelTypes),
-        ];
+        return $fuelTypeIdMessage ? [self::FUEL_TYPE_ID_KEY => $fuelTypeIdMessage] : [];
     }
 
     /**
@@ -65,6 +53,51 @@ class EmissionRecordRequest extends FormRequest
      */
     public function rules(): array
     {
-        return self::$rules[Str::after($this->route()->getName(), '.')];
+        $rules = self::$rules[$this->route()->getName()];
+
+        $fuelTypeIdRules = $this->getFuelTypeIdRules();
+
+        if ($fuelTypeIdRules) {
+            $rules[self::FUEL_TYPE_ID_KEY] = $fuelTypeIdRules;
+        }
+
+        return $rules;
+    }
+
+    private function getFuelTypeIdMessage(): string|null
+    {
+        if ($this->route()->getName() === self::HOMES_STORE_ROUTE) {
+            $availableFuelTypeNames = ['Electricity', 'Natural Gas'];
+
+            $availableFuelTypes = FuelType::pluck('name', 'id')
+                ->filter(function ($item) use ($availableFuelTypeNames) {
+                    return in_array($item, $availableFuelTypeNames);
+                })
+                ->map(function ($item, $key) {
+                    return $key . ' => ' . $item;
+                })->toArray();;
+
+            return 'The selected fuel type id is invalid. Available fuel types: ' . implode(', ', $availableFuelTypes);
+        }
+
+        return null;
+    }
+
+    private function getFuelTypeIdRules(): array|null
+    {
+        if ($this->route()->getName() === self::HOMES_STORE_ROUTE) {
+            $availableFuelTypeNames = ['Electricity', 'Natural Gas'];
+
+            $availableFuelTypeIds = FuelType::pluck('name', 'id')
+                ->filter(function ($item) use ($availableFuelTypeNames) {
+                    return in_array($item, $availableFuelTypeNames);
+                })
+                ->keys()
+                ->toArray();
+
+            return ['required', 'integer', 'exists:fuel_types,id', 'in:' . implode(',', $availableFuelTypeIds)];
+        }
+
+        return null;
     }
 }

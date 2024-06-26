@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Enums\FuelTypeEnum;
 use App\Exceptions\EmissionRecordNotFoundException;
 use App\Exceptions\VehicleNotFoundException;
+use App\Http\Requests\EmissionRecordRequest;
 use App\Http\Resources\EmissionRecordResource;
 use App\Models\FuelType;
 use App\Models\Home;
+use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Config;
@@ -18,6 +20,19 @@ class EmissionRecordService
     public function index(Vehicle|Home $source): AnonymousResourceCollection
     {
         return EmissionRecordResource::collection($source->emissionRecords);
+    }
+
+    public function indexAll(User $user): AnonymousResourceCollection
+    {
+        $vehicleEmissionRecords = $user->vehicles->map(function (Vehicle $vehicle) {
+            return $vehicle->emissionRecords;
+        })->flatten();
+
+        $homeEmissionRecords = $user->homes->map(function (Home $home) {
+            return $home->emissionRecords;
+        })->flatten();
+
+        return EmissionRecordResource::collection($vehicleEmissionRecords->merge($homeEmissionRecords));
     }
 
     public function show(int $id, Vehicle|Home $source): EmissionRecordResource
@@ -33,11 +48,15 @@ class EmissionRecordService
 
     public function store(array $data, Vehicle|Home $source): EmissionRecordResource
     {
-        return DB::transaction(function () use ($data, $source) {
-            return EmissionRecordResource::make($source->emissionRecords()->create([
-                ...$data,
-                'co2_emmision' => $this->calculateCo2Emission($data['fuel_type_id'], $data['fuel_consumption']),
-            ]));
+        if ($source instanceof Vehicle) {
+            $data['co2_emmision'] = $this->calculateCo2Emission($source->fuelType->id, $data['fuel_consumption']);
+            $data[EmissionRecordRequest::FUEL_TYPE_ID_KEY] = $source->fuelType->id;
+        } else {
+            $data['co2_emmision'] = $this->calculateCo2Emission($data['fuel_type_id'], $data['fuel_consumption']);
+        }
+
+        return DB::transaction(function () use ($source, $data) {
+            return EmissionRecordResource::make($source->emissionRecords()->create($data));
         });
     }
 

@@ -20,11 +20,17 @@ class EmissionRecordController extends Controller
     {
         $source = $request->get('source');
 
-        $emissionRecords = $this->service->index($source);
-
         return response()->json([
             'message' => 'Emission records retrieved successfully',
-            'data' => $emissionRecords
+            'data' => $this->service->index($source)
+        ]);
+    }
+
+    public function indexAll(Request $request): JsonResponse
+    {
+        return response()->json([
+            'message' => 'Emission records retrieved successfully',
+            'data' => $this->service->indexAll($request->user())
         ]);
     }
 
@@ -32,11 +38,9 @@ class EmissionRecordController extends Controller
     {
         $source = $request->get('source');
 
-        $emissionRecord = $this->service->show($id, $source);
-
         return response()->json([
             'message' => 'Emission record retrieved successfully',
-            'data' => $emissionRecord
+            'data' => $this->service->show($id, $source)
         ]);
     }
 
@@ -44,11 +48,9 @@ class EmissionRecordController extends Controller
     {
         $source = $request->get('source');
 
-        $emissionRecord = $this->service->store($request->all(), $source);
-
         return response()->json([
             'message' => 'Emission record retrieved successfully',
-            'data' => $emissionRecord
+            'data' => $this->service->store($request->all(), $source)
         ]);
     }
 

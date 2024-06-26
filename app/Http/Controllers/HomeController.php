@@ -18,41 +18,33 @@ class HomeController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $homes = $this->service->index($request->user());
-
         return response()->json([
             'message' => 'Homes retrieved successfully',
-            'data' => $homes
+            'data' => $this->service->index($request->user())
         ]);
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $home = $this->service->show($id, $request->user());
-
         return response()->json([
             'message' => 'Home retrieved successfully',
-            'data' => $home
+            'data' => $this->service->show($id, $request->user())
         ]);
     }
 
     public function store(HomeRequest $request): JsonResponse
     {
-        $home = $this->service->store($request->all(), $request->user());
-
         return response()->json([
             'message' => 'Home stored successfully',
-            'data' => $home
+            'data' => $this->service->store($request->all(), $request->user())
         ], 201);
     }
 
     public function update(HomeRequest $request, int $id): JsonResponse
     {
-        $home = $this->service->update($id, $request->all(), $request->user());
-
         return response()->json([
             'message' => 'Home updated successfully',
-            'data' => $home
+            'data' => $this->service->update($id, $request->all(), $request->user())
         ]);
     }
 

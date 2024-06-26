@@ -18,21 +18,17 @@ class AuthController extends Controller
 
     public function register(AuthRequest $request): JsonResponse
     {
-        $registeredUser = $this->service->register($request->all());
-
         return response()->json([
             'message' => 'User registered successfully',
-            'data' => $registeredUser
+            'data' => $this->service->register($request->all())
         ], 201);
     }
 
     public function login(AuthRequest $request): JsonResponse
     {
-        $token = $this->service->login($request->all());
-
         return response()->json([
             'message' => 'User logged in successfully',
-            'token' => $token,
+            'token' => $this->service->login($request->all())
         ]);
     }
 

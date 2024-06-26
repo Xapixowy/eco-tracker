@@ -18,41 +18,33 @@ class VehicleController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $vehicles = $this->service->index($request->user());
-
         return response()->json([
             'message' => 'Vehicles retrieved successfully',
-            'data' => $vehicles
+            'data' => $this->service->index($request->user())
         ]);
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $vehicle = $this->service->show($id, $request->user());
-
         return response()->json([
             'message' => 'Vehicle retrieved successfully',
-            'data' => $vehicle
+            'data' => $this->service->show($id, $request->user())
         ]);
     }
 
     public function store(VehicleRequest $request): JsonResponse
     {
-        $vehicle = $this->service->store($request->all(), $request->user());
-
         return response()->json([
             'message' => 'Vehicle stored successfully',
-            'data' => $vehicle
+            'data' => $this->service->store($request->all(), $request->user())
         ], 201);
     }
 
     public function update(VehicleRequest $request, int $id): JsonResponse
     {
-        $vehicle = $this->service->update($id, $request->all(), $request->user());
-
         return response()->json([
             'message' => 'Vehicle updated successfully',
-            'data' => $vehicle
+            'data' => $this->service->update($id, $request->all(), $request->user())
         ]);
     }
 

@@ -8,19 +8,19 @@ class AuthRequest extends FormRequest
 {
     const REGISTER_ROUTE = 'auth.register';
     const LOGIN_ROUTE = 'auth.login';
-    const USERNAME = 'username';
-    const EMAIL = 'email';
-    const PASSWORD = 'password';
+    const USERNAME_KEY = 'username';
+    const EMAIL_KEY = 'email';
+    const PASSWORD_KEY = 'password';
 
     private static $rules = [
         self::REGISTER_ROUTE => [
-            self::USERNAME => 'required|string|max:255',
-            self::EMAIL => 'required|string|email|max:255|unique:users',
-            self::PASSWORD => 'required|string|min:8|confirmed'
+            self::USERNAME_KEY => 'required|string|max:255',
+            self::EMAIL_KEY => 'required|string|email|max:255|unique:users',
+            self::PASSWORD_KEY => 'required|string|min:8|confirmed'
         ],
         self::LOGIN_ROUTE => [
-            self::EMAIL => 'required|string|email',
-            self::PASSWORD => 'required|string',
+            self::EMAIL_KEY => 'required|string|email',
+            self::PASSWORD_KEY => 'required|string',
         ],
     ];
 
